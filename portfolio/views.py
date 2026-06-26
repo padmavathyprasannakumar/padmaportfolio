@@ -129,10 +129,7 @@ def project_detail(request, pk):
 def contact(request):
     profile = get_profile()
 
-    # Dynamic contact page content from Django admin
     contact_page = ContactPageContent.objects.first()
-
-    # Dynamic left-side contact details from Django admin
     contact_details = ContactDetail.objects.filter(is_active=True).order_by("order", "id")
 
     if request.method == "POST":
@@ -177,17 +174,16 @@ Message:
 
                 return redirect("contact")
 
-            except SMTPException:
+            except Exception as e:
+                logger.exception("EMAIL SEND ERROR: %s", e)
+                print("EMAIL SEND ERROR:", repr(e))
+
                 messages.error(
                     request,
                     "Message saved, but email could not be sent. Please check SMTP settings.",
                 )
 
-            except Exception:
-                messages.error(
-                    request,
-                    "Something went wrong while sending your message. Please try again later.",
-                )
+                return redirect("contact")
 
         else:
             messages.error(
