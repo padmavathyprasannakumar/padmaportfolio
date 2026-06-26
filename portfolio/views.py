@@ -1,4 +1,4 @@
-from smtplib import SMTPException
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -24,6 +24,9 @@ from .models import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_profile():
     """
     Get first profile added from Django admin.
@@ -35,8 +38,6 @@ def get_profile():
 def home(request):
     profile = get_profile()
 
-    # Show selected home-page projects first.
-    # If no project is selected as latest, show newest admin-added projects.
     latest_projects = Project.objects.filter(is_latest=True).order_by("-id")
 
     if not latest_projects.exists():
@@ -44,7 +45,6 @@ def home(request):
 
     latest_projects = latest_projects[:6]
 
-    # Dynamic home projects heading from admin dashboard
     home_project_section = HomeProjectSection.objects.first()
 
     return render(
@@ -61,13 +61,9 @@ def home(request):
 def about(request):
     profile = get_profile()
 
-    # Dynamic About Me contents from admin dashboard
     about_sections = AboutSection.objects.all().order_by("id")
-
-    # Dynamic skill cards from admin dashboard
     skill_cards = SkillCard.objects.all().order_by("id")
 
-    # Resume related details from admin dashboard
     skills = Skill.objects.all().order_by("id")
     languages = Language.objects.all().order_by("id")
     education = Education.objects.all().order_by("-id")
@@ -93,10 +89,7 @@ def about(request):
 def projects(request):
     profile = get_profile()
 
-    # All projects added from Django admin dashboard
     all_projects = Project.objects.all().order_by("-id")
-
-    # Dynamic projects page heading from admin dashboard
     projects_page = ProjectsPageContent.objects.first()
 
     return render(
@@ -113,7 +106,6 @@ def projects(request):
 def project_detail(request, pk):
     profile = get_profile()
 
-    # Single project detail page
     project = get_object_or_404(Project, pk=pk)
 
     return render(
@@ -130,19 +122,25 @@ def contact(request):
     profile = get_profile()
 
     contact_page = ContactPageContent.objects.first()
-    contact_details = ContactDetail.objects.filter(is_active=True).order_by("order", "id")
+
+    # Dynamic left-side contact details from Django admin
+    # Using order_by("id") to avoid Render crash if "order" field is not in database.
+    contact_details = ContactDetail.objects.filter(is_active=True).order_by("id")
 
     if request.method == "POST":
         form = ContactForm(request.POST)
 
         if form.is_valid():
-            contact_message = form.save()
+            try:
+                contact_message = form.save()
 
-            full_name = f"{contact_message.first_name} {contact_message.last_name}".strip()
+                full_name = (
+                    f"{contact_message.first_name} {contact_message.last_name}"
+                ).strip()
 
-            email_subject = f"Portfolio Contact: {contact_message.subject}"
+                email_subject = f"Portfolio Contact: {contact_message.subject}"
 
-            email_body = f"""
+                email_body = f"""
 New message from portfolio website.
 
 Name: {full_name}
@@ -156,7 +154,6 @@ Message:
 {contact_message.message}
 """
 
-            try:
                 email = EmailMessage(
                     subject=email_subject,
                     body=email_body,
@@ -175,12 +172,12 @@ Message:
                 return redirect("contact")
 
             except Exception as e:
-                logger.exception("EMAIL SEND ERROR: %s", e)
-                print("EMAIL SEND ERROR:", repr(e))
+                logger.exception("CONTACT FORM ERROR: %s", e)
+                print("CONTACT FORM ERROR:", repr(e))
 
                 messages.error(
                     request,
-                    "Message saved, but email could not be sent. Please check SMTP settings.",
+                    "Message could not be sent. Please check Render logs.",
                 )
 
                 return redirect("contact")
