@@ -149,19 +149,18 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 # EMAIL SETTINGS - BREVO SMTP
+# EMAIL SETTINGS - BREVO SMTP
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", 10))
 
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = os.environ.get(
-    "DEFAULT_FROM_EMAIL",
-    EMAIL_HOST_USER
-)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 CONTACT_RECEIVER_EMAIL = os.environ.get(
     "CONTACT_RECEIVER_EMAIL",
