@@ -20,6 +20,8 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
+
+# ALLOWED HOSTS
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
@@ -30,12 +32,30 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+EXTRA_ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "")
+if EXTRA_ALLOWED_HOSTS:
+    ALLOWED_HOSTS += [
+        host.strip()
+        for host in EXTRA_ALLOWED_HOSTS.split(",")
+        if host.strip()
+    ]
+
+
+# CSRF TRUSTED ORIGINS
 CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
 ]
 
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
+EXTRA_CSRF_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if EXTRA_CSRF_ORIGINS:
+    CSRF_TRUSTED_ORIGINS += [
+        origin.strip()
+        for origin in EXTRA_CSRF_ORIGINS.split(",")
+        if origin.strip()
+    ]
 
 
 # APPLICATIONS
@@ -128,7 +148,6 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Only add project-level static folder if it exists.
 STATICFILES_DIRS = []
 if (BASE_DIR / "static").exists():
     STATICFILES_DIRS.append(BASE_DIR / "static")
@@ -149,18 +168,31 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 # EMAIL SETTINGS - BREVO SMTP
-# EMAIL SETTINGS - BREVO SMTP
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend"
+)
 
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
-EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", 10))
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False") == "True"
+
+# Do not use TLS and SSL together.
+# For Brevo port 587, use TLS=True and SSL=False.
+if EMAIL_USE_SSL:
+    EMAIL_USE_TLS = False
+
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", 30))
 
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    EMAIL_HOST_USER or "webmaster@localhost"
+)
 
 CONTACT_RECEIVER_EMAIL = os.environ.get(
     "CONTACT_RECEIVER_EMAIL",
@@ -168,7 +200,9 @@ CONTACT_RECEIVER_EMAIL = os.environ.get(
 )
 
 
-# SECURITY SETTINGS FOR RENDER PRODUCTION
+# RENDER / PRODUCTION SECURITY SETTINGS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
