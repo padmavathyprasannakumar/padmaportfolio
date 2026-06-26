@@ -1,0 +1,55 @@
+{% extends 'portfolio/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'portfolio/css/contact.css' %}?v=dynamic-contact-details">
+{% endblock %}
+
+{% block content %}
+
+<section class="contact-section">
+    <div class="contact-info">
+        <p class="small-title">{{ contact_page.small_title|default:"Contact Us" }}</p>
+        <h1>{{ contact_page.heading|default:"Let's Connect & Collaborate" }}</h1>
+        <p>{{ contact_page.description|default:"Feel free to contact me for projects, collaborations, or job opportunities." }}</p>
+
+        <div class="contact-list">
+            {% for detail in contact_details %}
+                <a class="contact-item {% if not detail.link %}is-static{% endif %}"
+                   {% if detail.link %}href="{{ detail.link }}"{% endif %}
+                   {% if detail.open_in_new_tab %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                    <span class="contact-icon">{{ detail.icon }}</span>
+                    <span class="contact-text">
+                        <span class="contact-label">{{ detail.title }}</span>
+                        <span class="contact-value">{{ detail.value }}</span>
+                    </span>
+                </a>
+            {% empty %}
+                <p class="contact-empty">Add contact details from Django Admin → Contact Details.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="contact-form-box">
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="row">
+                {{ form.first_name }}
+                {{ form.last_name }}
+            </div>
+
+            <div class="row">
+                {{ form.email }}
+                {{ form.phone }}
+            </div>
+
+            {{ form.subject }}
+            {{ form.message }}
+
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+</section>
+
+{% endblock %}

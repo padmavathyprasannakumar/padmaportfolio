@@ -1,0 +1,145 @@
+{% extends 'portfolio/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'portfolio/css/about.css' %}?v=2026062603">
+{% endblock %}
+
+{% block content %}
+
+<!-- About Me Main Section -->
+<section class="about-section">
+    <h1>About Me</h1>
+
+    <div class="about-box">
+        <div class="about-image">
+            {% if profile.profile_image %}
+                <img src="{{ profile.profile_image.url }}" alt="{{ profile.full_name }}">
+            {% endif %}
+        </div>
+
+        <div class="about-text">
+            <h2>{{ profile.full_name }}</h2>
+            <h3>{{ profile.job_title }}</h3>
+            <p>{{ profile.about_me|linebreaks }}</p>
+
+            {% if profile.cv_file %}
+                <a href="{{ profile.cv_file.url }}" class="main-btn" download>
+                    Download CV
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+
+<!-- Dynamic About Content From Admin -->
+{% if about_sections %}
+<section class="about-content-section">
+    <h1>More About My Work</h1>
+
+    <div class="about-content-grid">
+        {% for section in about_sections %}
+        <div class="about-content-card">
+            <h2>{{ section.title }}</h2>
+            <p>{{ section.description|linebreaks }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+
+<!-- Dynamic Skill Cards From Admin -->
+<section class="skill-card-section">
+    <h1>I Specialize in a Range of <span>Skills</span></h1>
+
+    <div class="skill-card-grid">
+        {% for card in skill_cards %}
+        <div class="skill-card {% if card.is_highlighted %}highlight-card{% endif %}">
+            <h2>{{ card.title }}</h2>
+            <p>{{ card.description|linebreaks }}</p>
+        </div>
+        {% empty %}
+        <p class="empty-text">No skill cards added yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- Skills and Languages -->
+<section class="info-section">
+    <div class="info-box">
+        <h2>Technical Skills</h2>
+
+        {% for skill in skills %}
+            <span class="tag">{{ skill.title }}</span>
+        {% empty %}
+            <p>No skills added yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="info-box">
+        <h2>Languages</h2>
+
+        {% for language in languages %}
+            <span class="tag">{{ language.name }}</span>
+        {% empty %}
+            <p>No languages added yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- Education and Work Experience -->
+<section class="two-column">
+    <div>
+        <h2>Education</h2>
+
+        {% for item in education %}
+        <div class="timeline-card">
+            <h3>{{ item.course }}</h3>
+            <p>{{ item.institution }}</p>
+            <span>{{ item.year }}</span>
+        </div>
+        {% empty %}
+            <p>No education details added yet.</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <h2>Work Experience</h2>
+
+        {% for item in experience %}
+        <div class="timeline-card">
+            <h3>{{ item.job_title }}</h3>
+            <p><strong>{{ item.company }}</strong></p>
+
+            {% if item.location %}
+                <p>{{ item.location }}</p>
+            {% endif %}
+
+            <span>{{ item.duration }}</span>
+            <p>{{ item.description|linebreaks }}</p>
+        </div>
+        {% empty %}
+            <p>No work experience added yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- Certifications -->
+<section class="info-section">
+    <div class="info-box full">
+        <h2>Certifications</h2>
+
+        {% for cert in certifications %}
+            <p>• {{ cert.title }}</p>
+        {% empty %}
+            <p>No certifications added yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

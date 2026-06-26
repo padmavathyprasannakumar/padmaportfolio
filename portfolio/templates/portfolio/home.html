@@ -1,0 +1,115 @@
+{% extends 'portfolio/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'portfolio/css/home.css' %}?v=home-project-heading">
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="hero-shape shape-one"></div>
+    <div class="hero-shape shape-two"></div>
+
+    <div class="hero-text">
+        <p class="hello">Hello, welcome to my portfolio</p>
+        <h1>I'm {{ profile.full_name }}</h1>
+        <h2>{{ profile.job_title }}</h2>
+        <p class="hero-intro">{{ profile.short_intro }}</p>
+
+        <div class="hero-buttons">
+            {% if profile.github or profile.linkedin %}
+            <div class="hero-social-links hero-button-socials" aria-label="Social profile links">
+                {% if profile.github %}
+                <a href="{{ profile.github }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="hero-social-btn github-btn"
+                   aria-label="Open GitHub profile">
+                    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.38-3.88-1.38-.53-1.35-1.3-1.7-1.3-1.7-1.06-.72.08-.7.08-.7 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.74 1.27 3.41.97.1-.76.4-1.27.74-1.56-2.56-.3-5.25-1.28-5.25-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.5.11-3.06 0 0 .98-.31 3.18 1.18a10.96 10.96 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.64 1.57.24 2.77.12 3.06.75.8 1.2 1.84 1.2 3.1 0 4.43-2.7 5.4-5.27 5.69.42.36.79 1.07.79 2.16v3.02c0 .31.2.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+                </a>
+                {% endif %}
+
+                {% if profile.linkedin %}
+                <a href="{{ profile.linkedin }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="hero-social-btn linkedin-btn"
+                   aria-label="Open LinkedIn profile">
+                    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5ZM.35 8h4.3v14H.35V8Zm7.15 0h4.12v1.92h.06c.57-1.08 1.98-2.22 4.08-2.22 4.36 0 5.17 2.87 5.17 6.6V22h-4.3v-6.84c0-1.63-.03-3.73-2.27-3.73-2.28 0-2.63 1.78-2.63 3.61V22H7.5V8Z"/></svg>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if profile.cv_file %}
+                <a href="{{ profile.cv_file.url }}" class="outline-btn" download>Download CV</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="hero-image">
+        <div class="image-glow"></div>
+        {% if profile.profile_image %}
+            <img src="{{ profile.profile_image.url }}" alt="{{ profile.full_name }}">
+        {% endif %}
+    </div>
+</section>
+
+<section class="latest-projects">
+    {% if home_project_section and home_project_section.is_visible %}
+    <div class="section-heading">
+        {% if home_project_section.small_title %}
+            <p class="section-kicker">{{ home_project_section.small_title }}</p>
+        {% endif %}
+
+        <h2>{{ home_project_section.heading }}</h2>
+
+        {% if home_project_section.description %}
+            <p>{{ home_project_section.description }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="project-grid">
+        {% for project in latest_projects %}
+        <article class="project-card">
+            <div class="project-image-wrap">
+                {% if project.screenshot %}
+                    <img src="{{ project.screenshot.url }}" alt="{{ project.title }} screenshot">
+                {% endif %}
+            </div>
+            <div class="project-content">
+                <h3>{{ project.title }}</h3>
+                <p>{{ project.short_description|truncatewords:24 }}</p>
+
+                <div class="tech-list">
+                    {% for tech in project.technology_list %}
+                        <span>{{ tech }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="project-actions">
+                    <a href="{% url 'project_detail' project.pk %}" class="main-btn small-btn">View Details</a>
+                    {% if project.live_link %}
+                        <a href="{{ project.live_link }}" target="_blank" rel="noopener noreferrer" class="outline-btn small-btn">Live</a>
+                    {% endif %}
+                    {% if project.github_link %}
+                        <a href="{{ project.github_link }}" target="_blank" rel="noopener noreferrer" class="icon-link" aria-label="GitHub repository">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.38-3.88-1.38-.53-1.35-1.3-1.7-1.3-1.7-1.06-.72.08-.7.08-.7 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.74 1.27 3.41.97.1-.76.4-1.27.74-1.56-2.56-.3-5.25-1.28-5.25-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.5.11-3.06 0 0 .98-.31 3.18 1.18a10.96 10.96 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.64 1.57.24 2.77.12 3.06.75.8 1.2 1.84 1.2 3.1 0 4.43-2.7 5.4-5.27 5.69.42.36.79 1.07.79 2.16v3.02c0 .31.2.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <p class="empty-text">No projects added yet. Add projects from Django Admin to display them here.</p>
+        {% endfor %}
+    </div>
+
+    <div class="center">
+        <a href="{% url 'projects' %}" class="outline-btn">{{ home_project_section.button_text|default:"View More Projects" }}</a>
+    </div>
+</section>
+
+{% endblock %}
