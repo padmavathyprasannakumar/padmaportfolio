@@ -1,38 +1,41 @@
 """
-Django settings for padma_portfolio project.
-Ready for local development + Render deployment + Brevo SMTP email.
+Django settings for hospital_site project.
+Ready for local development and Render deployment with Cloudinary media storage.
 """
 
-import os
 from pathlib import Path
-
+import os
 import dj_database_url
 
-
+# =========================================================
+# BASE DIRECTORY
+# =========================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# SECURITY
-SECRET_KEY = os.environ.get(
+# =========================================================
+# SECURITY SETTINGS
+# =========================================================
+SECRET_KEY = os.getenv(
     "SECRET_KEY",
-    "django-insecure-local-development-key-change-this"
+    "django-insecure-local-dev-only-change-this-key"
 )
 
-DEBUG = os.environ.get("DEBUG", "True") == "True"
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-
+# =========================================================
 # ALLOWED HOSTS
+# =========================================================
 ALLOWED_HOSTS = [
-    "127.0.0.1",
     "localhost",
+    "127.0.0.1",
     ".onrender.com",
 ]
 
-RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-EXTRA_ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "")
+EXTRA_ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "")
 if EXTRA_ALLOWED_HOSTS:
     ALLOWED_HOSTS += [
         host.strip()
@@ -40,26 +43,37 @@ if EXTRA_ALLOWED_HOSTS:
         if host.strip()
     ]
 
-
-# CSRF TRUSTED ORIGINS
+# =========================================================
+# CSRF SETTINGS
+# =========================================================
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.onrender.com",
+    origin.strip()
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:8000,http://127.0.0.1:8000"
+    ).split(",")
+    if origin.strip()
 ]
 
 if RENDER_EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
 
-EXTRA_CSRF_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
-if EXTRA_CSRF_ORIGINS:
-    CSRF_TRUSTED_ORIGINS += [
-        origin.strip()
-        for origin in EXTRA_CSRF_ORIGINS.split(",")
-        if origin.strip()
-    ]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
 
+# =========================================================
 # APPLICATIONS
+# =========================================================
 INSTALLED_APPS = [
+    # Cloudinary
+    "cloudinary_storage",
+    "cloudinary",
+
+    # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -67,11 +81,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    "portfolio",
+    # Custom app
+    "hospital",
 ]
 
-
+# =========================================================
 # MIDDLEWARE
+# =========================================================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -84,11 +100,15 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# =========================================================
+# URLS / WSGI
+# =========================================================
+ROOT_URLCONF = "hospital_site.urls"
+WSGI_APPLICATION = "hospital_site.wsgi.application"
 
-ROOT_URLCONF = "padma_portfolio.urls"
-
-
+# =========================================================
 # TEMPLATES
+# =========================================================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -99,25 +119,36 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "hospital.context_processors.site_info",
             ],
         },
     },
 ]
 
-
-WSGI_APPLICATION = "padma_portfolio.wsgi.application"
-
-
+# =========================================================
 # DATABASE
-DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-    )
-}
+# =========================================================
+DATABASE_URL = os.getenv("DATABASE_URL")
 
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
+# =========================================================
 # PASSWORD VALIDATION
+# =========================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -133,81 +164,72 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# LANGUAGE AND TIME
+# =========================================================
+# INTERNATIONALIZATION
+# =========================================================
 LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "Asia/Kuala_Lumpur"
-
+TIME_ZONE = "UTC"
 USE_I18N = True
-
 USE_TZ = True
 
-
+# =========================================================
 # STATIC FILES
+# =========================================================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS = []
-if (BASE_DIR / "static").exists():
-    STATICFILES_DIRS.append(BASE_DIR / "static")
+# =========================================================
+# CLOUDINARY MEDIA FILES
+# =========================================================
+# Recommended Render environment variable:
+# CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+#
+# Alternative variables:
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
+USE_CLOUDINARY = os.getenv(
+    "USE_CLOUDINARY",
+    "True" if os.getenv("CLOUDINARY_URL") or os.getenv("CLOUDINARY_CLOUD_NAME") else "False"
+).lower() == "true"
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
 }
 
-
-# MEDIA FILES
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+if USE_CLOUDINARY:
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
-# EMAIL SETTINGS - BREVO SMTP
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.smtp.EmailBackend"
-)
+# =========================================================
+# LOGIN / LOGOUT
+# =========================================================
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
 
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
-
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
-EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False") == "True"
-
-# Do not use TLS and SSL together.
-# For Brevo port 587, use TLS=True and SSL=False.
-if EMAIL_USE_SSL:
-    EMAIL_USE_TLS = False
-
-EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", 30))
-
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-
-DEFAULT_FROM_EMAIL = os.environ.get(
-    "DEFAULT_FROM_EMAIL",
-    EMAIL_HOST_USER or "webmaster@localhost"
-)
-
-CONTACT_RECEIVER_EMAIL = os.environ.get(
-    "CONTACT_RECEIVER_EMAIL",
-    "padmavathyprasanna4@gmail.com"
-)
-
-
-# RENDER / PRODUCTION SECURITY SETTINGS
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-
-
-# DEFAULT PRIMARY KEY FIELD
+# =========================================================
+# DEFAULT PRIMARY KEY
+# =========================================================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
