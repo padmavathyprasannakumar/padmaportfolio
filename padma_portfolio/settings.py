@@ -5,6 +5,8 @@ Ready for local development and Render deployment with Cloudinary media storage.
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse, unquote
+
 import dj_database_url
 
 # =========================================================
@@ -20,7 +22,10 @@ SECRET_KEY = os.getenv(
     "django-insecure-local-dev-only-change-this-key"
 )
 
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+DEBUG = os.getenv(
+    "DEBUG",
+    "False" if os.getenv("RENDER_EXTERNAL_HOSTNAME") else "True"
+).lower() == "true"
 
 # =========================================================
 # ALLOWED HOSTS
@@ -32,10 +37,12 @@ ALLOWED_HOSTS = [
 ]
 
 RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 EXTRA_ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "")
+
 if EXTRA_ALLOWED_HOSTS:
     ALLOWED_HOSTS += [
         host.strip()
@@ -47,13 +54,19 @@ if EXTRA_ALLOWED_HOSTS:
 # CSRF SETTINGS
 # =========================================================
 CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv(
-        "CSRF_TRUSTED_ORIGINS",
-        "http://localhost:8000,http://127.0.0.1:8000"
-    ).split(",")
-    if origin.strip()
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://*.onrender.com",
 ]
+
+EXTRA_CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+
+if EXTRA_CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS += [
+        origin.strip()
+        for origin in EXTRA_CSRF_TRUSTED_ORIGINS.split(",")
+        if origin.strip()
+    ]
 
 if RENDER_EXTERNAL_HOSTNAME:
     render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
@@ -112,7 +125,9 @@ WSGI_APPLICATION = "hospital_site.wsgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -179,29 +194,40 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # =========================================================
-# CLOUDINARY MEDIA FILES
+# MEDIA FILES / CLOUDINARY
 # =========================================================
-# Recommended Render environment variable:
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "")
+
+USE_CLOUDINARY = os.getenv(
+    "USE_CLOUDINARY",
+    "True" if CLOUDINARY_URL or os.getenv("CLOUDINARY_CLOUD_NAME") else "False"
+).lower() == "true"
+
+# Option 1 for Render:
 # CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 #
-# Alternative variables:
+# Option 2:
 # CLOUDINARY_CLOUD_NAME=your_cloud_name
 # CLOUDINARY_API_KEY=your_api_key
 # CLOUDINARY_API_SECRET=your_api_secret
 
-USE_CLOUDINARY = os.getenv(
-    "USE_CLOUDINARY",
-    "True" if os.getenv("CLOUDINARY_URL") or os.getenv("CLOUDINARY_CLOUD_NAME") else "False"
-).lower() == "true"
+if CLOUDINARY_URL:
+    parsed_cloudinary_url = urlparse(CLOUDINARY_URL)
 
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
-    "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
-    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
-}
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": parsed_cloudinary_url.hostname,
+        "API_KEY": unquote(parsed_cloudinary_url.username or ""),
+        "API_SECRET": unquote(parsed_cloudinary_url.password or ""),
+    }
+else:
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+        "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
+        "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
+    }
 
 if USE_CLOUDINARY:
     STORAGES = {
