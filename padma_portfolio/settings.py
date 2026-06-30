@@ -1,47 +1,50 @@
 """
-Django settings for productsite project.
-Ready for local development and Render deployment with Cloudinary media storage.
+Django settings for padma_portfolio project.
+Ready for local development + Render deployment + Cloudinary media storage + Brevo SMTP email.
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 from urllib.parse import urlparse, unquote
 
 import dj_database_url
+
 
 # =========================================================
 # BASE DIRECTORY
 # =========================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # =========================================================
 # SECURITY SETTINGS
 # =========================================================
-SECRET_KEY = os.getenv(
+SECRET_KEY = os.environ.get(
     "SECRET_KEY",
-    "django-insecure-zfe&gp(rwym++k!o4rsbfg$s&#m0(r#*+4u(*rj!bg01_t&oqb"
+    "django-insecure-local-development-key-change-this"
 )
 
-DEBUG = os.getenv(
+DEBUG = os.environ.get(
     "DEBUG",
-    "False" if os.getenv("RENDER_EXTERNAL_HOSTNAME") else "True"
+    "False" if os.environ.get("RENDER_EXTERNAL_HOSTNAME") else "True"
 ).lower() == "true"
+
 
 # =========================================================
 # ALLOWED HOSTS
 # =========================================================
 ALLOWED_HOSTS = [
-    "localhost",
     "127.0.0.1",
+    "localhost",
     ".onrender.com",
 ]
 
-RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
-EXTRA_ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "")
+EXTRA_ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "")
 
 if EXTRA_ALLOWED_HOSTS:
     ALLOWED_HOSTS += [
@@ -49,6 +52,7 @@ if EXTRA_ALLOWED_HOSTS:
         for host in EXTRA_ALLOWED_HOSTS.split(",")
         if host.strip()
     ]
+
 
 # =========================================================
 # CSRF SETTINGS
@@ -59,7 +63,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
 ]
 
-EXTRA_CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+EXTRA_CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 
 if EXTRA_CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS += [
@@ -73,17 +77,13 @@ if RENDER_EXTERNAL_HOSTNAME:
     if render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(render_origin)
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-CSRF_COOKIE_SECURE = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
 
 # =========================================================
 # APPLICATIONS
 # =========================================================
 INSTALLED_APPS = [
     # Cloudinary
-    # Do not add "cloudinary_storage" here because it can break collectstatic on Render
+    # Do NOT add "cloudinary_storage" here because it can break collectstatic on Render.
     "cloudinary",
 
     # Django apps
@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     # Custom app
     "portfolio",
 ]
+
 
 # =========================================================
 # MIDDLEWARE
@@ -113,11 +114,13 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 # =========================================================
 # URLS / WSGI
 # =========================================================
-ROOT_URLCONF = "productsite.urls"
-WSGI_APPLICATION = "productsite.wsgi.application"
+ROOT_URLCONF = "padma_portfolio.urls"
+WSGI_APPLICATION = "padma_portfolio.wsgi.application"
+
 
 # =========================================================
 # TEMPLATES
@@ -139,26 +142,18 @@ TEMPLATES = [
     },
 ]
 
+
 # =========================================================
 # DATABASE
 # =========================================================
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASES = {
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        ssl_require=not DEBUG,
+    )
+}
 
-if DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=not DEBUG,
-        )
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
 
 # =========================================================
 # PASSWORD VALIDATION
@@ -178,13 +173,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # =========================================================
-# INTERNATIONALIZATION
+# LANGUAGE AND TIME
 # =========================================================
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kuala_Lumpur"
 USE_I18N = True
 USE_TZ = True
+
 
 # =========================================================
 # STATIC FILES
@@ -192,8 +189,14 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+STATICFILES_DIRS = []
+
+if (BASE_DIR / "static").exists():
+    STATICFILES_DIRS.append(BASE_DIR / "static")
+
 # WhiteNoise handles CSS, JS, and static images
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # =========================================================
 # MEDIA FILES / CLOUDINARY
@@ -201,11 +204,11 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "")
+CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL", "")
 
-USE_CLOUDINARY = os.getenv(
+USE_CLOUDINARY = os.environ.get(
     "USE_CLOUDINARY",
-    "True" if CLOUDINARY_URL or os.getenv("CLOUDINARY_CLOUD_NAME") else "False"
+    "True" if CLOUDINARY_URL or os.environ.get("CLOUDINARY_CLOUD_NAME") else "False"
 ).lower() == "true"
 
 # Option 1 for Render:
@@ -226,12 +229,15 @@ if CLOUDINARY_URL:
     }
 else:
     CLOUDINARY_STORAGE = {
-        "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
-        "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
-        "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
+        "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME", ""),
+        "API_KEY": os.environ.get("CLOUDINARY_API_KEY", ""),
+        "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET", ""),
     }
 
-# Django 6 storage settings
+
+# =========================================================
+# DJANGO 6 STORAGE SETTINGS
+# =========================================================
 STORAGES = {
     "default": {
         "BACKEND": (
@@ -245,11 +251,35 @@ STORAGES = {
     },
 }
 
-# Compatibility setting for older storage packages
+# Compatibility setting for django-cloudinary-storage
 if USE_CLOUDINARY:
     DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
+
+# =========================================================
+# EMAIL SETTINGS - BREVO SMTP
+# =========================================================
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-relay.brevo.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
+
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    EMAIL_HOST_USER
+)
+
+CONTACT_RECEIVER_EMAIL = os.environ.get(
+    "CONTACT_RECEIVER_EMAIL",
+    "padmavathyprasanna4@gmail.com"
+)
+
 
 # =========================================================
 # LOGIN / LOGOUT
@@ -258,7 +288,19 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
+
 # =========================================================
-# DEFAULT PRIMARY KEY
+# SECURITY SETTINGS FOR RENDER PRODUCTION
+# =========================================================
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+
+# =========================================================
+# DEFAULT PRIMARY KEY FIELD
 # =========================================================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
