@@ -122,6 +122,18 @@ WSGI_APPLICATION = "hospital_site.wsgi.application"
 # =========================================================
 # TEMPLATES
 # =========================================================
+TEMPLATE_CONTEXT_PROCESSORS = [
+    "django.template.context_processors.request",
+    "django.contrib.auth.context_processors.auth",
+    "django.contrib.messages.context_processors.messages",
+]
+
+# Only add portfolio context processor if the file exists
+PORTFOLIO_CONTEXT_PROCESSOR = BASE_DIR / "portfolio" / "context_processors.py"
+
+if PORTFOLIO_CONTEXT_PROCESSOR.exists():
+    TEMPLATE_CONTEXT_PROCESSORS.append("portfolio.context_processors.site_info")
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -130,12 +142,7 @@ TEMPLATES = [
         ],
         "APP_DIRS": True,
         "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "hospital.context_processors.site_info",
-            ],
+            "context_processors": TEMPLATE_CONTEXT_PROCESSORS,
         },
     },
 ]
@@ -218,7 +225,7 @@ if CLOUDINARY_URL:
     parsed_cloudinary_url = urlparse(CLOUDINARY_URL)
 
     CLOUDINARY_STORAGE = {
-        "CLOUD_NAME": parsed_cloudinary_url.hostname,
+        "CLOUD_NAME": parsed_cloudinary_url.hostname or "",
         "API_KEY": unquote(parsed_cloudinary_url.username or ""),
         "API_SECRET": unquote(parsed_cloudinary_url.password or ""),
     }
