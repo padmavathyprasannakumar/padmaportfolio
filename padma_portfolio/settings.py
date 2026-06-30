@@ -95,7 +95,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # Custom app
-    "hospital",
+    "portfolio",
 ]
 
 # =========================================================
