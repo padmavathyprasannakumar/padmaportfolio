@@ -83,7 +83,7 @@ SESSION_COOKIE_SECURE = not DEBUG
 # =========================================================
 INSTALLED_APPS = [
     # Cloudinary
-    "cloudinary_storage",
+    # Do NOT add "cloudinary_storage" here because it can break collectstatic on Render
     "cloudinary",
 
     # Django apps
@@ -122,18 +122,6 @@ WSGI_APPLICATION = "hospital_site.wsgi.application"
 # =========================================================
 # TEMPLATES
 # =========================================================
-TEMPLATE_CONTEXT_PROCESSORS = [
-    "django.template.context_processors.request",
-    "django.contrib.auth.context_processors.auth",
-    "django.contrib.messages.context_processors.messages",
-]
-
-# Only add portfolio context processor if the file exists
-PORTFOLIO_CONTEXT_PROCESSOR = BASE_DIR / "portfolio" / "context_processors.py"
-
-if PORTFOLIO_CONTEXT_PROCESSOR.exists():
-    TEMPLATE_CONTEXT_PROCESSORS.append("portfolio.context_processors.site_info")
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -142,7 +130,11 @@ TEMPLATES = [
         ],
         "APP_DIRS": True,
         "OPTIONS": {
-            "context_processors": TEMPLATE_CONTEXT_PROCESSORS,
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
         },
     },
 ]
@@ -200,6 +192,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# WhiteNoise handles CSS, JS, and static images
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 # =========================================================
 # MEDIA FILES / CLOUDINARY
 # =========================================================
@@ -236,24 +231,25 @@ else:
         "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
     }
 
+# Django 6 storage settings
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if USE_CLOUDINARY
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Compatibility setting for older storage packages
 if USE_CLOUDINARY:
-    STORAGES = {
-        "default": {
-            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-        },
-    }
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-        },
-    }
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
 # =========================================================
 # LOGIN / LOGOUT
