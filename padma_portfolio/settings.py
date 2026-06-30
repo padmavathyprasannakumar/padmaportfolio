@@ -1,5 +1,5 @@
 """
-Django settings for hospital_site project.
+Django settings for padmaportfolio project.
 Ready for local development and Render deployment with Cloudinary media storage.
 """
 
@@ -116,8 +116,8 @@ MIDDLEWARE = [
 # =========================================================
 # URLS / WSGI
 # =========================================================
-ROOT_URLCONF = "hospital_site.urls"
-WSGI_APPLICATION = "hospital_site.wsgi.application"
+ROOT_URLCONF = "padmaportfolio.urls"
+WSGI_APPLICATION = "padmaportfolio.wsgi.application"
 
 # =========================================================
 # TEMPLATES
