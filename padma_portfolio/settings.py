@@ -1,5 +1,5 @@
 """
-Django settings for padmaportfolio project.
+Django settings for productsite project.
 Ready for local development and Render deployment with Cloudinary media storage.
 """
 
@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # =========================================================
 SECRET_KEY = os.getenv(
     "SECRET_KEY",
-    "django-insecure-local-dev-only-change-this-key"
+    "django-insecure-zfe&gp(rwym++k!o4rsbfg$s&#m0(r#*+4u(*rj!bg01_t&oqb"
 )
 
 DEBUG = os.getenv(
@@ -83,7 +83,7 @@ SESSION_COOKIE_SECURE = not DEBUG
 # =========================================================
 INSTALLED_APPS = [
     # Cloudinary
-    # Do NOT add "cloudinary_storage" here because it can break collectstatic on Render
+    # Do not add "cloudinary_storage" here because it can break collectstatic on Render
     "cloudinary",
 
     # Django apps
@@ -116,8 +116,8 @@ MIDDLEWARE = [
 # =========================================================
 # URLS / WSGI
 # =========================================================
-ROOT_URLCONF = "padmaportfolio.urls"
-WSGI_APPLICATION = "padmaportfolio.wsgi.application"
+ROOT_URLCONF = "productsite.urls"
+WSGI_APPLICATION = "productsite.wsgi.application"
 
 # =========================================================
 # TEMPLATES
